@@ -1,0 +1,36 @@
+{
+  "name": "@moonbite/db",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "prisma generate",
+    "typecheck": "echo 'Prisma types are checked during build'",
+    "lint": "echo 'Prisma schema is validated during build'",
+    "db:migrate": "prisma migrate dev --name",
+    "db:seed": "node dist/seed.js",
+    "db:studio": "prisma studio",
+    "prisma:generate": "prisma generate",
+    "prisma:format": "prisma format"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.8.0",
+    "@moonbite/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3"
+  }
+}

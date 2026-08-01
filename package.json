@@ -1,0 +1,37 @@
+{
+  "name": "moonbite-merchant-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise SaaS platform for digital goods and MBITE cryptocurrency payments",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "e2e": "turbo run e2e",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:migrate": "turbo run db:migrate --filter=@moonbite/db",
+    "db:seed": "turbo run db:seed --filter=@moonbite/db",
+    "db:studio": "turbo run db:studio --filter=@moonbite/db",
+    "audit": "pnpm recursive audit --prod"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "turbo": "^1.13.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@moonbite/api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/jwt": "^7.2.4",
+    "@fastify/rate-limit": "^9.1.0",
+    "@moonbite/chain": "workspace:*",
+    "@moonbite/db": "workspace:*",
+    "@moonbite/shared": "workspace:*",
+    "@prisma/client": "^5.8.0",
+    "argon2": "^0.31.2",
+    "bull": "^4.11.5",
+    "crypto-js": "^4.2.0",
+    "fastify": "^4.25.2",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.3.2",
+    "mime-types": "^2.1.35",
+    "minio": "^7.1.0",
+    "nodemailer": "^6.9.7",
+    "qrcode": "^1.5.3",
+    "speakeasy": "^2.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/qrcode": "^1.5.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

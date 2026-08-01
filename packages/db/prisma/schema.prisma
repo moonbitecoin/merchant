@@ -1,0 +1,451 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MERCHANTS & AUTHENTICATION
+// ============================================================================
+
+model Merchant {
+  id                    String    @id @default(cuid2())
+  email                 String    @unique
+  passwordHash          String
+  name                  String
+  avatarUrl             String?
+  payoutWallet          String?
+  payoutWalletValidated Boolean   @default(false)
+  totpSecret            String?
+  totpEnabled           Boolean   @default(false)
+  emailVerified         Boolean   @default(false)
+  emailVerificationToken String?
+  emailVerificationExpiresAt DateTime?
+
+  // Relations
+  stores                Store[]
+  apiKeys               APIKey[]
+  webhooks              Webhook[]
+  payouts               Payout[]
+  affiliates            Affiliate[]
+  auditLogs             AuditLog[]
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// STORES
+// ============================================================================
+
+model Store {
+  id          String   @id @default(cuid2())
+  merchantId  String
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  status      String   @default("active") // 'active' | 'suspended' | 'archived'
+  publishedAt DateTime?
+
+  // Relations
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    Product[]
+  coupons     Coupon[]
+  affiliates  Affiliate[]
+  reviews     Review[]
+  transactions Transaction[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([merchantId])
+  @@index([slug])
+  @@index([status])
+}
+
+// ============================================================================
+// PRODUCTS & FILES
+// ============================================================================
+
+model Product {
+  id          String   @id @default(cuid2())
+  storeId     String
+  title       String
+  slug        String
+  description String   // markdown
+  category    String   // 'SOFTWARE' | 'EBOOK' | 'ART' | 'COURSE' | 'OTHER'
+  price       BigInt   // in smallest MBITE unit (10^8 units = 1 MBITE)
+  downloadLimit String @default("UNLIMITED") // '1' | '3' | 'UNLIMITED'
+  expiryDate  DateTime?
+  status      String   @default("draft") // 'draft' | 'active' | 'archived'
+
+  // Relations
+  store       Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  files       ProductFile[]
+  transactions Transaction[]
+  coupons     CouponProduct[]
+  reviews     Review[]
+  subscriptions Subscription[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@index([status])
+  @@index([category])
+}
+
+model ProductFile {
+  id            String   @id @default(cuid2())
+  productId     String
+  filename      String
+  mimetype      String
+  size          BigInt   // in bytes
+  sha256Hash    String   @unique
+  minioPath     String   @unique
+  encryptionKey String   // base64, wrapped with master key
+  iv            String   // base64, 12 bytes
+  tag           String   // base64, AES-256-GCM auth tag
+
+  // Relations
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  downloads     Download[]
+
+  createdAt     DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ============================================================================
+// TRANSACTIONS & PAYMENTS (CORE BUSINESS LOGIC)
+// ============================================================================
+
+model Transaction {
+  id                  String   @id @default(cuid2())
+  productId           String
+  storeId             String
+  amount              BigInt   // actual amount sent (smallest unit)
+  expectedAmount      BigInt   // expected amount (smallest unit)
+  platformFeeAmount   BigInt   // 2% of expectedAmount
+  merchantAmount      BigInt   // expectedAmount - platformFeeAmount
+  depositAddress      String   @unique
+  txHash              String?  @unique
+  confirmedAt         DateTime?
+  confirmationCount   Int      @default(0)
+  status              String   @default("pending") // 'pending' | 'underpaid' | 'confirmed' | 'reverted' | 'late' | 'failed'
+  expiresAt           DateTime
+
+  // Relations
+  product             Product @relation(fields: [productId], references: [id])
+  store               Store @relation(fields: [storeId], references: [id])
+  downloads           Download[]
+  reviews             Review[]
+  affiliateEarnings   AffiliateEarning[]
+  subscription        Subscription[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([productId])
+  @@index([depositAddress])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model Download {
+  id              String   @id @default(cuid2())
+  transactionId   String
+  productFileId   String
+  ipAddress       String
+  userAgent       String?
+  downloadedAt    DateTime @default(now())
+
+  // Relations
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productFile     ProductFile @relation(fields: [productFileId], references: [id])
+
+  createdAt       DateTime @default(now())
+
+  @@index([transactionId])
+  @@index([productFileId])
+  @@index([ipAddress])
+}
+
+// ============================================================================
+// PAYOUTS
+// ============================================================================
+
+model Payout {
+  id              String   @id @default(cuid2())
+  merchantId      String
+  amount          BigInt   // in smallest MBITE unit
+  status          String   @default("pending") // 'pending' | 'processing' | 'completed' | 'failed'
+  txHash          String?
+  requestedAt     DateTime
+  processedAt     DateTime?
+  failureReason   String?
+
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([merchantId])
+  @@index([status])
+}
+
+// ============================================================================
+// API KEYS
+// ============================================================================
+
+model APIKey {
+  id              String   @id @default(cuid2())
+  merchantId      String
+  publicKey       String   @unique // pk_live_ or pk_test_ prefix
+  secretKeyHash   String   // Argon2id hash
+  lastUsedAt      DateTime?
+
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  revokedAt       DateTime?
+
+  @@index([merchantId])
+  @@index([publicKey])
+}
+
+// ============================================================================
+// WEBHOOKS & DELIVERIES
+// ============================================================================
+
+model Webhook {
+  id              String   @id @default(cuid2())
+  merchantId      String
+  url             String
+  events          String[] // 'payment.received' | 'file.downloaded' | 'payout.completed'
+  status          String   @default("active") // 'active' | 'disabled' | 'deleted'
+  secret          String   // for HMAC signing
+
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  deliveries      WebhookDelivery[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([merchantId])
+  @@index([status])
+}
+
+model WebhookDelivery {
+  id              String   @id @default(cuid2())
+  webhookId       String
+  event           String
+  payload         Json
+  statusCode      Int?
+  response        String?
+  retryCount      Int      @default(0)
+  nextRetryAt     DateTime?
+  completedAt     DateTime?
+
+  // Relations
+  webhook         Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([event])
+  @@index([nextRetryAt])
+}
+
+// ============================================================================
+// COUPONS
+// ============================================================================
+
+model Coupon {
+  id              String   @id @default(cuid2())
+  storeId         String
+  code            String
+  type            String   // 'percent' | 'fixed'
+  value           BigInt   // percent (0-100) or fixed amount (smallest unit)
+  usageLimit      Int?
+  usageCount      Int      @default(0)
+  expiresAt       DateTime?
+
+  // Relations
+  store           Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products        CouponProduct[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([storeId, code])
+  @@index([storeId])
+  @@index([expiresAt])
+}
+
+model CouponProduct {
+  couponId        String
+  productId       String
+
+  coupon          Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, productId])
+  @@index([productId])
+}
+
+// ============================================================================
+// REVIEWS
+// ============================================================================
+
+model Review {
+  id              String   @id @default(cuid2())
+  productId       String
+  transactionId   String
+  rating          Int      // 1-5
+  text            String?
+  merchantReply   String?
+
+  // Relations
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([transactionId])
+  @@index([productId])
+  @@index([rating])
+}
+
+// ============================================================================
+// AFFILIATES
+// ============================================================================
+
+model Affiliate {
+  id              String   @id @default(cuid2())
+  merchantId      String
+  storeId         String
+  email           String
+  commissionPercent Decimal @db.Decimal(5, 2) // 0.00-100.00
+  affiliateWallet String
+
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  store           Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  earnings        AffiliateEarning[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([storeId, email])
+  @@index([merchantId])
+  @@index([storeId])
+}
+
+model AffiliateEarning {
+  id              String   @id @default(cuid2())
+  affiliateId     String
+  transactionId   String
+  amount          BigInt   // in smallest MBITE unit
+
+  // Relations
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@unique([affiliateId, transactionId])
+  @@index([affiliateId])
+  @@index([transactionId])
+}
+
+// ============================================================================
+// SUBSCRIPTIONS
+// ============================================================================
+
+model Subscription {
+  id              String   @id @default(cuid2())
+  productId       String
+  transactionId   String
+  buyerEmail      String
+  billingCycle    String   // 'monthly' | 'quarterly' | 'yearly'
+  amount          BigInt   // in smallest MBITE unit
+  status          String   @default("active") // 'active' | 'paused' | 'cancelled'
+  currentPeriodStart DateTime
+  currentPeriodEnd DateTime
+  cancelledAt     DateTime?
+
+  // Relations
+  product         Product @relation(fields: [productId], references: [id])
+  transaction     Transaction @relation(fields: [transactionId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([transactionId])
+  @@index([status])
+}
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+model AuditLog {
+  id              String   @id @default(cuid2())
+  merchantId      String
+  action          String   // merchant.login | store.create | etc
+  resourceType    String
+  resourceId      String
+  changes         Json?    // before/after values
+  ipAddress       String
+  userAgent       String?
+
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@index([merchantId])
+  @@index([action])
+  @@index([resourceType])
+}
+
+// ============================================================================
+// IDEMPOTENCY KEYS (prevent duplicate payments/transactions)
+// ============================================================================
+
+model IdempotencyKey {
+  key             String   @id
+  merchantId      String
+  result          Json
+  expiresAt       DateTime
+
+  createdAt       DateTime @default(now())
+
+  @@index([expiresAt])
+}
