@@ -17,6 +17,7 @@ import authRoutes from './routes/auth.js';
 import storesRoutes from './routes/stores.js';
 import productsRoutes from './routes/products.js';
 import checkoutRoutes from './routes/checkout.js';
+import downloadsRoutes from './routes/downloads.js';
 
 /**
  * Create and configure Fastify app
@@ -111,6 +112,7 @@ export async function createApp() {
   await app.register(storesRoutes, { prefix: '/api/v1/stores' });
   await app.register(productsRoutes, { prefix: '/api/v1/products' });
   await app.register(checkoutRoutes, { prefix: '/api/v1' });
+  await app.register(downloadsRoutes, { prefix: '/api/v1' });
 
   // =========================================================================
   // OpenAPI Documentation
