@@ -3,31 +3,29 @@
  * CRITICAL: All money operations use BigInt only
  */
 
-import crypto from 'crypto';
-import { createHmac } from 'crypto';
+import crypto, { createHmac } from 'crypto';
 import speakeasy from 'speakeasy';
 import {
   JWT_ALGORITHM,
-  JWT_EXPIRY_MINUTES,
-  REFRESH_TOKEN_EXPIRY_DAYS,
   ENCRYPTION_ALGORITHM,
   ENCRYPTION_KEY_SIZE_BYTES,
   ENCRYPTION_IV_SIZE_BYTES,
 } from '@moonbite/shared';
 
 /**
- * Hash password with Argon2id (using native Node crypto for now)
- * Production: use @node-rs/argon2 or similar
+ * Hash password with PBKDF2 (production: use argon2)
+ * Uses 100,000 iterations with SHA-256
  */
 export async function hashPassword(password: string): Promise<string> {
-  // Simple bcrypt replacement using PBKDF2
-  // In production, use a dedicated argon2 library
   const salt = crypto.randomBytes(16);
   const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256');
 
   return salt.toString('hex') + ':' + hash.toString('hex');
 }
 
+/**
+ * Verify password against hash
+ */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const [saltHex, hashHex] = hash.split(':');
 
@@ -35,33 +33,65 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return false;
   }
 
-  const salt = Buffer.from(saltHex, 'hex');
-  const hashBuffer = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256');
+  try {
+    const salt = Buffer.from(saltHex, 'hex');
+    const hashBuffer = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256');
 
-  return hashBuffer.toString('hex') === hashHex;
+    // Timing-safe comparison
+    return crypto.timingSafeEqual(
+      Buffer.from(hashBuffer.toString('hex')),
+      Buffer.from(hashHex)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Base64URL encode (for JWT)
+ */
+function base64UrlEncode(data: string | Buffer): string {
+  const buffer = typeof data === 'string' ? Buffer.from(data, 'utf-8') : data;
+  return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+/**
+ * Base64URL decode (for JWT)
+ */
+function base64UrlDecode(data: string): string {
+  let base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding if needed
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return Buffer.from(base64, 'base64').toString('utf-8');
 }
 
 /**
  * Generate JWT token
  */
 export function generateJWT(payload: Record<string, unknown>, expiresInSeconds: number): string {
-  // Simplified JWT generation (production: use jsonwebtoken library)
-  const header = btoa(JSON.stringify({ alg: JWT_ALGORITHM, typ: 'JWT' }));
+  const header = {
+    alg: JWT_ALGORITHM,
+    typ: 'JWT',
+  };
+
   const now = Math.floor(Date.now() / 1000);
-  const body = btoa(
-    JSON.stringify({
-      ...payload,
-      iat: now,
-      exp: now + expiresInSeconds,
-    })
-  );
+  const body = {
+    ...payload,
+    iat: now,
+    exp: now + expiresInSeconds,
+  };
 
   const secret = process.env.JWT_SECRET || 'development-secret-change-in-prod';
-  const signature = createHmac('sha256', secret)
-    .update(`${header}.${body}`)
-    .digest('base64url');
 
-  return `${header}.${body}.${signature}`;
+  const headerEncoded = base64UrlEncode(JSON.stringify(header));
+  const bodyEncoded = base64UrlEncode(JSON.stringify(body));
+  const message = `${headerEncoded}.${bodyEncoded}`;
+
+  const signature = createHmac('sha256', secret).update(message).digest('base64url');
+
+  return `${message}.${signature}`;
 }
 
 /**
@@ -76,15 +106,20 @@ export function verifyJWT(token: string): Record<string, unknown> | null {
     }
 
     const secret = process.env.JWT_SECRET || 'development-secret-change-in-prod';
-    const expectedSignature = createHmac('sha256', secret)
-      .update(`${headerB64}.${bodyB64}`)
-      .digest('base64url');
+    const message = `${headerB64}.${bodyB64}`;
+    const expectedSignature = createHmac('sha256', secret).update(message).digest('base64url');
 
-    if (expectedSignature !== signatureB64) {
+    // Timing-safe comparison
+    try {
+      crypto.timingSafeEqual(
+        Buffer.from(expectedSignature),
+        Buffer.from(signatureB64)
+      );
+    } catch {
       return null;
     }
 
-    const payload = JSON.parse(atob(bodyB64)) as Record<string, unknown>;
+    const payload = JSON.parse(base64UrlDecode(bodyB64)) as Record<string, unknown>;
 
     // Check expiration
     const exp = payload.exp as number | undefined;
