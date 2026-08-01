@@ -7,6 +7,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import { PrismaClient } from '@moonbite/db';
 import { RATE_LIMIT_API_MAX, RATE_LIMIT_API_WINDOW_MS } from '@moonbite/shared';
 import { sendProblemJson } from './lib/error-handler.js';
@@ -56,6 +57,13 @@ export async function createApp() {
     skip: (_request) => {
       // Skip rate limiting for health checks
       return false;
+    },
+  });
+
+  // Multipart form data (for file uploads)
+  await app.register(multipart, {
+    limits: {
+      fileSize: 2n * 1024n * 1024n * 1024n, // 2GB
     },
   });
 
