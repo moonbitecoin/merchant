@@ -21,6 +21,7 @@ import downloadsRoutes from './routes/downloads.js';
 import dashboardRoutes from './routes/dashboard.js';
 import payoutRoutes from './routes/payouts.js';
 import couponRoutes from './routes/coupons.js';
+import reviewRoutes from './routes/reviews.js';
 
 /**
  * Create and configure Fastify app
@@ -119,6 +120,7 @@ export async function createApp() {
   await app.register(dashboardRoutes, { prefix: '/api/v1' });
   await app.register(payoutRoutes, { prefix: '/api/v1' });
   await app.register(couponRoutes, { prefix: '/api/v1' });
+  await app.register(reviewRoutes, { prefix: '/api/v1' });
 
   // =========================================================================
   // OpenAPI Documentation
