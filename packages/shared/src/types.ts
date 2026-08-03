@@ -202,7 +202,7 @@ export type Coupon = {
   storeId: StoreID;
   code: string; // unique per store
   type: CouponType;
-  value: BigInt; // percent (0-100) or fixed amount
+  value: bigint; // percent (0-100) or fixed amount
   usageLimit: number | null;
   usageCount: number;
   expiresAt: Date | null;

@@ -94,19 +94,19 @@ export async function sha256(data: string): Promise<string> {
  */
 export function generateRandomToken(length: number = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
 
   if (typeof window === 'undefined') {
-    // Node.js
-    const { randomBytes } = require('crypto');
+    // Node.js - use crypto module for better randomness
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { randomBytes } = require('crypto') as { randomBytes: (size: number) => Buffer };
     return randomBytes(length).toString('hex');
   }
 
-  // Browser
+  // Browser - use Math.random fallback
+  let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   return result;
 }
 
