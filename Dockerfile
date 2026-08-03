@@ -20,14 +20,17 @@ RUN pnpm install --frozen-lockfile
 # 1. Generate Prisma client first (db package)
 RUN pnpm --filter=@moonbite/db build
 
-# 2. Build shared utilities and chain adapters
+# 2. Refresh node_modules to update workspace symlinks after db build
+RUN pnpm install --frozen-lockfile
+
+# 3. Build shared utilities and chain adapters
 RUN pnpm --filter=@moonbite/shared build || true
 RUN pnpm --filter=@moonbite/chain build || true
 
-# 3. Build API (now @moonbite/db is available)
+# 4. Build API (now @moonbite/db is available)
 RUN pnpm --filter=@moonbite/api build
 
-# 4. Build web frontend
+# 5. Build web frontend
 RUN pnpm --filter=@moonbite/web build
 
 # Stage 2: Runtime
