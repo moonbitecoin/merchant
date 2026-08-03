@@ -212,7 +212,7 @@ export class PayoutService {
     });
 
     if (!payout || payout.merchantId !== merchantId) {
-      throw createAppError(ERROR_CODES.PAYOUT_NOT_FOUND, 'Payout not found');
+      throw createAppError(ERROR_CODES.NOT_FOUND, 'Payout not found');
     }
 
     return {

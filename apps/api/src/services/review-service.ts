@@ -238,7 +238,7 @@ export class ReviewService {
     });
 
     if (!review || review.product.store.merchantId !== merchantId) {
-      throw createAppError(ERROR_CODES.REVIEW_NOT_FOUND, 'Review not found');
+      throw createAppError(ERROR_CODES.NOT_FOUND, 'Review not found');
     }
 
     await this.prisma.review.update({
