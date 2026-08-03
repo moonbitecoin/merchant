@@ -16,7 +16,10 @@ COPY apps ./apps
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build packages (generates Prisma client + builds apps)
+# Generate Prisma client first
+RUN pnpm --filter=@moonbite/db run build
+
+# Build all packages and apps
 RUN pnpm build
 
 # Stage 2: Runtime
