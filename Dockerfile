@@ -16,8 +16,7 @@ COPY apps ./apps
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build packages
-RUN pnpm db:generate
+# Build packages (generates Prisma client + builds apps)
 RUN pnpm build
 
 # Stage 2: Runtime
