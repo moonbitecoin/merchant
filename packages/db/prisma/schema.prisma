@@ -16,7 +16,7 @@ datasource db {
 // ============================================================================
 
 model Merchant {
-  id                    String    @id @default(cuid2())
+  id                    String    @id @default(uuid())
   email                 String    @unique
   passwordHash          String
   name                  String
@@ -50,7 +50,7 @@ model Merchant {
 // ============================================================================
 
 model Store {
-  id          String   @id @default(cuid2())
+  id          String   @id @default(uuid())
   merchantId  String
   name        String
   slug        String   @unique
@@ -64,7 +64,6 @@ model Store {
   products    Product[]
   coupons     Coupon[]
   affiliates  Affiliate[]
-  reviews     Review[]
   transactions Transaction[]
 
   createdAt   DateTime @default(now())
@@ -81,7 +80,7 @@ model Store {
 // ============================================================================
 
 model Product {
-  id          String   @id @default(cuid2())
+  id          String   @id @default(uuid())
   storeId     String
   title       String
   slug        String
@@ -111,7 +110,7 @@ model Product {
 }
 
 model ProductFile {
-  id            String   @id @default(cuid2())
+  id            String   @id @default(uuid())
   productId     String
   filename      String
   mimetype      String
@@ -136,7 +135,7 @@ model ProductFile {
 // ============================================================================
 
 model Transaction {
-  id                  String   @id @default(cuid2())
+  id                  String   @id @default(uuid())
   productId           String
   storeId             String
   amount              BigInt   // actual amount sent (smallest unit)
@@ -170,7 +169,7 @@ model Transaction {
 }
 
 model Download {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   transactionId   String
   productFileId   String
   ipAddress       String
@@ -193,7 +192,7 @@ model Download {
 // ============================================================================
 
 model Payout {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   merchantId      String
   amount          BigInt   // in smallest MBITE unit
   status          String   @default("pending") // 'pending' | 'processing' | 'completed' | 'failed'
@@ -217,7 +216,7 @@ model Payout {
 // ============================================================================
 
 model APIKey {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   merchantId      String
   publicKey       String   @unique // pk_live_ or pk_test_ prefix
   secretKeyHash   String   // Argon2id hash
@@ -238,7 +237,7 @@ model APIKey {
 // ============================================================================
 
 model Webhook {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   merchantId      String
   url             String
   events          String[] // 'payment.received' | 'file.downloaded' | 'payout.completed'
@@ -257,7 +256,7 @@ model Webhook {
 }
 
 model WebhookDelivery {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   webhookId       String
   event           String
   payload         Json
@@ -282,7 +281,7 @@ model WebhookDelivery {
 // ============================================================================
 
 model Coupon {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   storeId         String
   code            String
   type            String   // 'percent' | 'fixed'
@@ -320,7 +319,7 @@ model CouponProduct {
 // ============================================================================
 
 model Review {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   productId       String
   transactionId   String
   rating          Int      // 1-5
@@ -345,7 +344,7 @@ model Review {
 // ============================================================================
 
 model Affiliate {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   merchantId      String
   storeId         String
   email           String
@@ -367,7 +366,7 @@ model Affiliate {
 }
 
 model AffiliateEarning {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   affiliateId     String
   transactionId   String
   amount          BigInt   // in smallest MBITE unit
@@ -388,7 +387,7 @@ model AffiliateEarning {
 // ============================================================================
 
 model Subscription {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   productId       String
   transactionId   String
   buyerEmail      String
@@ -416,7 +415,7 @@ model Subscription {
 // ============================================================================
 
 model AuditLog {
-  id              String   @id @default(cuid2())
+  id              String   @id @default(uuid())
   merchantId      String
   action          String   // merchant.login | store.create | etc
   resourceType    String
