@@ -141,11 +141,11 @@ export function parsePaginationQuery(
   page?: unknown,
   limit?: unknown
 ): { page: number; limit: number } {
-  const p = typeof page === 'string' ? parseInt(page, 10) : page;
-  const l = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+  const p = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : NaN);
+  const l = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : NaN);
 
-  const parsedPage = Number.isFinite(p) && p > 0 ? p : 1;
-  const parsedLimit = Number.isFinite(l) && l > 0 && l <= 100 ? l : 20;
+  const parsedPage = Number.isFinite(p) && p > 0 ? (p as number) : 1;
+  const parsedLimit = Number.isFinite(l) && l > 0 && l <= 100 ? (l as number) : 20;
 
   return { page: parsedPage, limit: parsedLimit };
 }
@@ -177,8 +177,9 @@ export function formatErrorMessage(error: unknown): string {
  */
 export function extractIpAddress(headers: Record<string, unknown>): string {
   const forwarded = headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim();
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    const ip = forwarded.split(',')[0]?.trim();
+    if (ip) return ip;
   }
 
   const realIp = headers['x-real-ip'];
