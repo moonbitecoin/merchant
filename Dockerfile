@@ -16,9 +16,19 @@ COPY apps ./apps
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build with Turbo (handles dependency order automatically)
-# db package build (prisma generate) runs before apps that depend on it
-RUN pnpm build --force
+# Build packages sequentially to ensure proper dependency ordering
+# 1. Generate Prisma client first (db package)
+RUN pnpm --filter=@moonbite/db build
+
+# 2. Build shared utilities and chain adapters
+RUN pnpm --filter=@moonbite/shared build || true
+RUN pnpm --filter=@moonbite/chain build || true
+
+# 3. Build API (now @moonbite/db is available)
+RUN pnpm --filter=@moonbite/api build
+
+# 4. Build web frontend
+RUN pnpm --filter=@moonbite/web build
 
 # Stage 2: Runtime
 FROM node:20-alpine
