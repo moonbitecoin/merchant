@@ -8,16 +8,19 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
+# Copy package files and schemas
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json tsconfig.json ./
 COPY packages ./packages
 COPY apps ./apps
 
+# Copy root package.json for db package scripts
+COPY packages/db/prisma ./packages/db/prisma
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma client first
-RUN pnpm --filter=@moonbite/db run build
+# Generate Prisma client explicitly for db package
+RUN cd /app/packages/db && pnpm exec prisma generate
 
 # Build all packages and apps
 RUN pnpm build
