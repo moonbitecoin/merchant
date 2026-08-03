@@ -11,7 +11,7 @@
     "JWT_SECRET",
     "ENCRYPTION_KEY"
   ],
-  "tasks": {
+  "pipeline": {
     "build": {
       "outputs": ["dist/**", ".next/**"],
       "cache": true
