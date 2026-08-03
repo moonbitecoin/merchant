@@ -59,8 +59,6 @@ jobs:
 
       - run: pnpm typecheck || true
 
-      - run: pnpm db:generate
-
       - name: Run unit tests
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/test
