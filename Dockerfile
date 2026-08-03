@@ -8,22 +8,17 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files and schemas
+# Copy package files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json tsconfig.json ./
 COPY packages ./packages
 COPY apps ./apps
 
-# Copy root package.json for db package scripts
-COPY packages/db/prisma ./packages/db/prisma
-
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma client explicitly for db package
-RUN cd /app/packages/db && pnpm exec prisma generate
-
-# Build all packages and apps
-RUN pnpm build
+# Build with Turbo (handles dependency order automatically)
+# db package build (prisma generate) runs before apps that depend on it
+RUN pnpm build --force
 
 # Stage 2: Runtime
 FROM node:20-alpine
