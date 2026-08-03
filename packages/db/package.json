@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "prisma generate",
+    "build": "prisma generate && mkdir -p dist && cp -r src/client/* dist/",
     "typecheck": "echo 'Prisma types are checked during build'",
     "lint": "echo 'Prisma schema is validated during build'",
     "db:migrate": "prisma migrate dev",
