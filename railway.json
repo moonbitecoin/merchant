@@ -4,6 +4,8 @@
     "builder": "dockerfile"
   },
   "deploy": {
-    "startCommand": "pnpm start"
+    "startCommand": "pnpm start",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 3
   }
 }
