@@ -71,10 +71,6 @@ COPY --from=builder /app/tsconfig.json ./
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# Health check - simple curl-based check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
-
 # Start API and web
 EXPOSE 3001
 EXPOSE 3000
