@@ -93,6 +93,20 @@ export async function createApp() {
   });
 
   // =========================================================================
+  // Migration Endpoint (for production deployment)
+  // =========================================================================
+
+  app.get('/migrate', async () => {
+    try {
+      const { execSync } = await import('child_process');
+      execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'inherit' });
+      return { status: 'ok', message: 'Migrations completed' };
+    } catch (error) {
+      throw error;
+    }
+  });
+
+  // =========================================================================
   // Database Connection
   // =========================================================================
 
