@@ -21,7 +21,7 @@ export interface FileUploadOptions {
 export class FileService {
   constructor(
     private prisma: PrismaClient,
-    private minioClient: MinIOClient
+    private minioClient: MinIOClient | null
   ) {}
 
   /**
@@ -30,6 +30,10 @@ export class FileService {
    * Encrypts at rest with AES-256-GCM
    */
   async uploadFile(options: FileUploadOptions): Promise<any> {
+    if (!this.minioClient) {
+      throw createAppError('SERVICE_UNAVAILABLE', 'File storage service is not available');
+    }
+
     const { productId, filename, mimetype, stream } = options;
 
     // Verify product exists
@@ -183,6 +187,10 @@ export class FileService {
    * Delete file
    */
   async deleteFile(fileId: string, productId: string): Promise<void> {
+    if (!this.minioClient) {
+      throw createAppError('SERVICE_UNAVAILABLE', 'File storage service is not available');
+    }
+
     // Verify file belongs to product
     const file = await this.prisma.productFile.findUnique({
       where: { id: fileId },
@@ -252,10 +260,18 @@ export class FileService {
 
 /**
  * Create MinIO client from environment
+ * Returns null if MINIO_ENDPOINT is not configured
  */
-export function createMinIOClient(): MinIOClient {
+export function createMinIOClient(): MinIOClient | null {
+  const endpoint = process.env.MINIO_ENDPOINT;
+
+  // MinIO is optional - only initialize if endpoint is explicitly configured
+  if (!endpoint) {
+    return null;
+  }
+
   return new MinIOClient({
-    endPoint: process.env.MINIO_ENDPOINT || 'localhost:9000',
+    endPoint: endpoint,
     accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
     secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
     useSSL: process.env.NODE_ENV === 'production',
