@@ -69,8 +69,6 @@ COPY --from=builder /app/tsconfig.json ./
 
 # Set environment
 ENV NODE_ENV=production
-ENV PORT=3001
-ENV API_PORT=3001
 ENV API_HOST=0.0.0.0
 
 # Start API and web
