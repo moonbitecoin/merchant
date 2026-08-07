@@ -5,6 +5,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install system dependencies required by Prisma and other packages
+RUN apk add --no-cache \
+  openssl \
+  ca-certificates \
+  libc6-compat \
+  python3 \
+  make \
+  g++
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -37,6 +46,12 @@ RUN pnpm --filter=@moonbite/web build
 FROM node:20-alpine
 
 WORKDIR /app
+
+# Install system dependencies required by Prisma and other packages
+RUN apk add --no-cache \
+  openssl \
+  ca-certificates \
+  libc6-compat
 
 # Install pnpm
 RUN npm install -g pnpm
