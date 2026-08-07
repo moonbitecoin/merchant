@@ -3,9 +3,19 @@
  * Creates demo merchants, stores, products, and transactions for testing
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { execSync } = require('child_process');
 const crypto = require('crypto');
 
+// Ensure Prisma client is generated before importing
+try {
+  console.log('Generating Prisma client...');
+  execSync('npx prisma generate', { stdio: 'inherit' });
+  console.log('✓ Prisma client generated');
+} catch (err) {
+  console.warn('Prisma generate had issues, continuing...');
+}
+
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Simple hash function for demo purposes
