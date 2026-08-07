@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
+import Redis from 'ioredis';
 import { PrismaClient } from '@moonbite/db';
 import { RATE_LIMIT_API_MAX, RATE_LIMIT_API_WINDOW_MS } from '@moonbite/shared';
 import { sendProblemJson } from './lib/error-handler.js';
@@ -54,12 +55,14 @@ export async function createApp() {
   });
 
   // Rate limiting: Sliding window using Redis
+  const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
   await app.register(rateLimit, {
     max: RATE_LIMIT_API_MAX,
     timeWindow: RATE_LIMIT_API_WINDOW_MS,
     cache: 10000,
     allowList: ['127.0.0.1'],
-    redis: process.env.REDIS_URL,
+    redis: redis,
     skip: (_request) => {
       // Skip rate limiting for health checks
       return false;
@@ -99,6 +102,7 @@ export async function createApp() {
 
   // Graceful shutdown
   app.addHook('onClose', async () => {
+    await redis.disconnect();
     await prisma.$disconnect();
   });
 
