@@ -4,6 +4,7 @@
     "builder": "dockerfile"
   },
   "deploy": {
+    "port": 3001,
     "startCommand": "pnpm start",
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 3
