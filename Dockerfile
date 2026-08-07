@@ -51,7 +51,8 @@ WORKDIR /app
 RUN apk add --no-cache \
   openssl \
   ca-certificates \
-  libc6-compat
+  libc6-compat \
+  curl
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -70,9 +71,9 @@ COPY --from=builder /app/tsconfig.json ./
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+# Health check - simple curl-based check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
 
 # Start API and web
 EXPOSE 3001
