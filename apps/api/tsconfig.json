@@ -9,5 +9,11 @@
     "noImplicitAny": false
   },
   "include": ["src"],
-  "exclude": ["dist", "node_modules", "**/*.test.ts"]
+  "exclude": ["dist", "node_modules", "**/*.test.ts"],
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "noEmit": true
+    }
+  }
 }

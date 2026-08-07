@@ -1,0 +1,10 @@
+2026-08-06T21:20:22.243323Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie")}
+2026-08-06T21:20:22.243373Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-08-06T21:20:22.845651Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\daemon")}
+2026-08-06T21:20:22.845673Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-08-06T21:20:34.939490Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\tsconfig.json")}
+2026-08-06T21:20:34.939511Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@moonbite/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2026-08-06T23:44:54.348413Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2026-08-06T23:44:54.348432Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
+2026-08-06T23:44:54.542251Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2026-08-06T23:44:54.542264Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
