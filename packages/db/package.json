@@ -20,13 +20,13 @@
     "lint": "echo 'Prisma schema is validated during build'",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
-    "db:seed": "node --loader ts-node/esm prisma/seed.ts",
+    "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
     "prisma:format": "prisma format"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",
