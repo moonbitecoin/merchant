@@ -93,22 +93,26 @@ export async function createApp() {
   });
 
   // =========================================================================
-  // Migration Endpoint (for production deployment)
+  // Database Connection & Initialization
   // =========================================================================
 
-  app.get('/migrate', async () => {
+  // Run database migrations if needed (non-blocking, logs errors but continues)
+  const runMigrationsAsync = async () => {
     try {
-      const { execSync } = await import('child_process');
-      execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'inherit' });
-      return { status: 'ok', message: 'Migrations completed' };
+      if (process.env.NODE_ENV === 'production') {
+        const { execSync } = await import('child_process');
+        console.log('[INFO] Running database migrations...');
+        execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'pipe' });
+        console.log('[INFO] Database migrations completed successfully');
+      }
     } catch (error) {
-      throw error;
+      console.error('[WARN] Database migrations failed:', error instanceof Error ? error.message : error);
+      // Continue anyway - migrations might already be applied
     }
-  });
+  };
 
-  // =========================================================================
-  // Database Connection
-  // =========================================================================
+  // Start migrations in background but don't wait for them
+  runMigrationsAsync().catch(err => console.error('[ERROR] Unexpected error during migrations:', err));
 
   const prisma = new PrismaClient();
 
