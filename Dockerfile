@@ -79,5 +79,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 EXPOSE 3001
 EXPOSE 3000
 
-# Run migrations and start app
-CMD sh -c "pnpm --filter=@moonbite/db db:migrate:prod && pnpm start"
+# Start app (migrations should be run separately via: railway run pnpm db:migrate:prod)
+CMD ["pnpm", "start"]
