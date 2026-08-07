@@ -3,19 +3,28 @@
  * Creates demo merchants, stores, products, and transactions for testing
  */
 
-const { execSync } = require('child_process');
+const path = require('path');
 const crypto = require('crypto');
 
-// Ensure Prisma client is generated before importing
+// Import Prisma Client - in production it's at dist, in dev it's at src/client
+let PrismaClient;
 try {
-  console.log('Generating Prisma client...');
-  execSync('npx prisma generate', { stdio: 'inherit' });
-  console.log('✓ Prisma client generated');
+  // Try dist first (production)
+  const distPath = path.join(__dirname, '..', 'dist', 'index.js');
+  const distClient = require(distPath);
+  PrismaClient = distClient.PrismaClient || require('@prisma/client').PrismaClient;
 } catch (err) {
-  console.warn('Prisma generate had issues, continuing...');
+  // Fall back to src/client (development)
+  try {
+    const srcPath = path.join(__dirname, '..', 'src', 'client', 'index.js');
+    const srcClient = require(srcPath);
+    PrismaClient = srcClient.PrismaClient;
+  } catch (err2) {
+    // Fall back to node_modules
+    PrismaClient = require('@prisma/client').PrismaClient;
+  }
 }
 
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Simple hash function for demo purposes
