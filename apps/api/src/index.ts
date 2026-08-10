@@ -102,11 +102,19 @@ export async function createApp() {
       if (process.env.NODE_ENV === 'production') {
         const { execSync } = await import('child_process');
         console.log('[INFO] Syncing database schema...');
-        execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'pipe' });
+        const output = execSync('pnpm --filter=@moonbite/db db:migrate:prod 2>&1', { encoding: 'utf-8' });
+        if (output) console.log('[INFO] Schema sync output:', output);
         console.log('[INFO] Database schema sync completed successfully');
       }
     } catch (error) {
-      console.error('[WARN] Database schema sync failed:', error instanceof Error ? error.message : error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[WARN] Database schema sync failed:', errorMsg);
+      if (error instanceof Error && (error as any).stdout) {
+        console.error('[WARN] Stdout:', (error as any).stdout);
+      }
+      if (error instanceof Error && (error as any).stderr) {
+        console.error('[WARN] Stderr:', (error as any).stderr);
+      }
       // Continue anyway - schema might already be applied
     }
   };
