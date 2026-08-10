@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
+import cookie from '@fastify/cookie';
 import Redis from 'ioredis';
 import { PrismaClient } from '@moonbite/db';
 import { RATE_LIMIT_API_MAX, RATE_LIMIT_API_WINDOW_MS } from '@moonbite/shared';
@@ -76,6 +77,9 @@ export async function createApp() {
       fileSize: 2n * 1024n * 1024n * 1024n, // 2GB
     },
   });
+
+  // Cookie support
+  await app.register(cookie);
 
   // =========================================================================
   // Global Error Handler
