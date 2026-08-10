@@ -12,6 +12,7 @@ import Redis from 'ioredis';
 import { PrismaClient } from '@moonbite/db';
 import { RATE_LIMIT_API_MAX, RATE_LIMIT_API_WINDOW_MS } from '@moonbite/shared';
 import { sendProblemJson } from './lib/error-handler.js';
+import { hashPassword } from './lib/security.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -98,11 +99,8 @@ export async function createApp() {
 
   app.post('/admin/seed', async (_request, reply) => {
     try {
-      const crypto = await import('crypto');
-
-      function generateSimpleHash(password: string) {
-        return crypto.createHash('sha256').update(password + 'salt').digest('hex');
-      }
+      // Hash password using PBKDF2
+      const passwordHash = await hashPassword('DemoPassword123!');
 
       // Create demo merchant
       const merchant = await prisma.merchant.upsert({
@@ -111,7 +109,7 @@ export async function createApp() {
         create: {
           id: '11111111-1111-1111-1111-111111111111',
           email: 'alice@example.com',
-          passwordHash: generateSimpleHash('DemoPassword123!'),
+          passwordHash,
           name: 'Alice Smith - Software Developer',
           avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
           payoutWallet: 'MBITEWallet1AddressForAlice123',
