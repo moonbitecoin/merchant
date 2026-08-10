@@ -93,6 +93,47 @@ export async function createApp() {
   });
 
   // =========================================================================
+  // Admin Seed Endpoint (Temporary - for initial data setup)
+  // =========================================================================
+
+  app.post('/admin/seed', async (_request, reply) => {
+    try {
+      const crypto = await import('crypto');
+
+      function generateSimpleHash(password: string) {
+        return crypto.createHash('sha256').update(password + 'salt').digest('hex');
+      }
+
+      // Create demo merchant
+      const merchant = await prisma.merchant.upsert({
+        where: { email: 'alice@example.com' },
+        update: {},
+        create: {
+          id: '11111111-1111-1111-1111-111111111111',
+          email: 'alice@example.com',
+          passwordHash: generateSimpleHash('DemoPassword123!'),
+          name: 'Alice Smith - Software Developer',
+          avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
+          payoutWallet: 'MBITEWallet1AddressForAlice123',
+          payoutWalletValidated: true,
+          emailVerified: true,
+        },
+      });
+
+      return {
+        status: 'seeded',
+        merchant: { id: merchant.id, email: merchant.email },
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return reply.code(500).send({
+        error: 'Seed failed',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // =========================================================================
   // Database Connection & Initialization
   // =========================================================================
 
