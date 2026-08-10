@@ -96,18 +96,32 @@ export async function createApp() {
   // Database Connection & Initialization
   // =========================================================================
 
-  // Run database migrations if needed (non-blocking, logs errors but continues)
+  // Run database migrations/push if needed (non-blocking, logs errors but continues)
   const runMigrationsAsync = async () => {
     try {
       if (process.env.NODE_ENV === 'production') {
         const { execSync } = await import('child_process');
-        console.log('[INFO] Running database migrations...');
-        execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'pipe' });
-        console.log('[INFO] Database migrations completed successfully');
+        const fs = await import('fs');
+
+        console.log('[INFO] Syncing database schema...');
+
+        // Use db push for initial setup (no migration files yet) or migrations if they exist
+        const migrationsPath = new URL('../../../packages/db/prisma/migrations', import.meta.url);
+        const hasMigrations = fs.existsSync(migrationsPath);
+
+        if (hasMigrations) {
+          console.log('[INFO] Migration files found, running migrations...');
+          execSync('pnpm --filter=@moonbite/db db:migrate:prod', { stdio: 'pipe' });
+        } else {
+          console.log('[INFO] No migration files found, using db push for initial schema sync...');
+          execSync('pnpm --filter=@moonbite/db prisma db push --skip-generate', { stdio: 'pipe' });
+        }
+
+        console.log('[INFO] Database schema sync completed successfully');
       }
     } catch (error) {
-      console.error('[WARN] Database migrations failed:', error instanceof Error ? error.message : error);
-      // Continue anyway - migrations might already be applied
+      console.error('[WARN] Database schema sync failed:', error instanceof Error ? error.message : error);
+      // Continue anyway - schema might already be applied
     }
   };
 
