@@ -102,10 +102,10 @@ export async function createApp() {
       // Hash password using PBKDF2
       const passwordHash = await hashPassword('DemoPassword123!');
 
-      // Create demo merchant
+      // Create demo merchant (update password if exists)
       const merchant = await prisma.merchant.upsert({
         where: { email: 'alice@example.com' },
-        update: {},
+        update: { passwordHash },
         create: {
           id: '11111111-1111-1111-1111-111111111111',
           email: 'alice@example.com',
