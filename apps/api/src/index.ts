@@ -101,13 +101,13 @@ export async function createApp() {
     try {
       if (process.env.NODE_ENV === 'production') {
         const { execSync } = await import('child_process');
-        const fs = await import('fs');
+        const { existsSync } = await import('fs');
 
         console.log('[INFO] Syncing database schema...');
 
         // Use db push for initial setup (no migration files yet) or migrations if they exist
-        const migrationsPath = new URL('../../../packages/db/prisma/migrations', import.meta.url);
-        const hasMigrations = fs.existsSync(migrationsPath);
+        const migrationsPath = new URL('../../../packages/db/prisma/migrations', import.meta.url).pathname;
+        const hasMigrations = existsSync(migrationsPath);
 
         if (hasMigrations) {
           console.log('[INFO] Migration files found, running migrations...');
