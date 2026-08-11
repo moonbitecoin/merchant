@@ -1,0 +1,90 @@
+name: moonbite-merchant
+services:
+- name: api
+  github:
+    repo: moonbitecoin/merchant
+    branch: main
+  build_command: pnpm install --frozen-lockfile && pnpm build
+  run_command: pnpm start
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: LOG_LEVEL
+    value: info
+  - key: API_HOST
+    value: 0.0.0.0
+  - key: API_PORT
+    value: "8080"
+  - key: CORS_ORIGIN
+    value: https://${APP_DOMAIN}
+  - key: DATABASE_URL
+    value: ${db.connection_string}
+  - key: REDIS_URL
+    value: ${redis.connection_string}
+  - key: JWT_SECRET
+    scope: RUN_TIME
+    value: ${JWT_SECRET}
+  - key: ENCRYPTION_KEY
+    scope: RUN_TIME
+    value: ${ENCRYPTION_KEY}
+  - key: NEXT_PUBLIC_API_URL
+    value: https://${APP_DOMAIN}/api
+  - key: SMTP_FROM_EMAIL
+    value: noreply@moonbite.org
+  - key: SMTP_FROM_NAME
+    value: MoonBite Merchant
+  - key: MAILPIT_HOST
+    value: mailpit
+  - key: MAILPIT_PORT
+    value: "1025"
+  http_port: 8080
+  health_check:
+    http_path: /health
+  source_dir: ./
+
+databases:
+- name: postgres
+  engine: PG
+  version: "16"
+  production: true
+
+- name: redis
+  engine: REDIS
+  version: "7"
+  production: true
+
+jobs:
+- name: db-migrate
+  github:
+    repo: moonbitecoin/merchant
+    branch: main
+  build_command: pnpm install --frozen-lockfile && pnpm build
+  run_command: pnpm --filter=@moonbite/db db:migrate:prod
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: DATABASE_URL
+    value: ${db.connection_string}
+  source_dir: ./
+
+- name: db-seed
+  github:
+    repo: moonbitecoin/merchant
+    branch: main
+  build_command: pnpm install --frozen-lockfile && pnpm build
+  run_command: pnpm --filter=@moonbite/db db:seed
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: DATABASE_URL
+    value: ${db.connection_string}
+  source_dir: ./
+
+ingress:
+  rules:
+  - match:
+      prefix: /
+    service: api
+    path_rewrite:
+      from_prefix: /
+      to_prefix: /
