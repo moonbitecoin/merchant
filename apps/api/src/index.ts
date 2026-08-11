@@ -13,7 +13,6 @@ import Redis from 'ioredis';
 import { PrismaClient } from '@moonbite/db';
 import { RATE_LIMIT_API_MAX, RATE_LIMIT_API_WINDOW_MS } from '@moonbite/shared';
 import { sendProblemJson } from './lib/error-handler.js';
-import { hashPassword } from './lib/security.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -95,44 +94,6 @@ export async function createApp() {
 
   app.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
-  });
-
-  // =========================================================================
-  // Admin Seed Endpoint (Temporary - for initial data setup)
-  // =========================================================================
-
-  app.post('/admin/seed', async (_request, reply) => {
-    try {
-      // Hash password using PBKDF2
-      const passwordHash = await hashPassword('DemoPassword123!');
-
-      // Create demo merchant (update password if exists)
-      const merchant = await prisma.merchant.upsert({
-        where: { email: 'alice@example.com' },
-        update: { passwordHash },
-        create: {
-          id: '11111111-1111-1111-1111-111111111111',
-          email: 'alice@example.com',
-          passwordHash,
-          name: 'Alice Smith - Software Developer',
-          avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
-          payoutWallet: 'MBITEWallet1AddressForAlice123',
-          payoutWalletValidated: true,
-          emailVerified: true,
-        },
-      });
-
-      return {
-        status: 'seeded',
-        merchant: { id: merchant.id, email: merchant.email },
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return reply.code(500).send({
-        error: 'Seed failed',
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
   });
 
   // =========================================================================
