@@ -1,0 +1,45 @@
+[Unit]
+Description=MoonBite Merchant Hub API
+Documentation=https://github.com/moonbitecoin/merchant
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=moonbite
+Group=moonbite
+WorkingDirectory=/opt/moonbite/merchant
+
+# Load environment variables from .env.production
+EnvironmentFile=/opt/moonbite/merchant/.env.production
+
+# Start command
+ExecStart=/usr/local/bin/pnpm start
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=600
+StartLimitBurst=3
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=65535
+
+# Logging
+StandardOutput=append:/var/log/moonbite/merchant/api.log
+StandardError=append:/var/log/moonbite/merchant/api.log
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/moonbite/merchant /var/log/moonbite/merchant
+
+# Timeouts
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
