@@ -55,15 +55,18 @@ export async function createApp() {
     exposedHeaders: ['X-Total-Count', 'X-Total-Pages'],
   });
 
-  // Rate limiting: Sliding window using Redis
-  const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  // Rate limiting: use Redis when REDIS_URL is configured, otherwise fall back
+  // to an in-memory store (fine for a single instance; avoids a hard dependency).
+  const redis = process.env.REDIS_URL
+    ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1 })
+    : null;
 
   await app.register(rateLimit, {
     max: RATE_LIMIT_API_MAX,
     timeWindow: RATE_LIMIT_API_WINDOW_MS,
     cache: 10000,
     allowList: ['127.0.0.1'],
-    redis: redis,
+    ...(redis ? { redis } : {}),
     skip: (_request) => {
       // Skip rate limiting for health checks
       return false;
@@ -132,7 +135,7 @@ export async function createApp() {
 
   // Graceful shutdown
   app.addHook('onClose', async () => {
-    await redis.disconnect();
+    if (redis) await redis.disconnect();
     await prisma.$disconnect();
   });
 
