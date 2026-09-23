@@ -27,13 +27,35 @@ try {
 
 const prisma = new PrismaClient();
 
-// Simple hash function for demo purposes
+// Password hash matching apps/api/src/lib/security.ts verifyPassword():
+// PBKDF2 (100k iterations, sha256, 64-byte key), stored as "saltHex:hashHex".
 function generateSimpleHash(password) {
-  return crypto.createHash('sha256').update(password + 'salt').digest('hex');
+  const salt = crypto.randomBytes(16);
+  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256');
+  return salt.toString('hex') + ':' + hash.toString('hex');
 }
 
 async function main() {
   console.log('Seeding production database...');
+
+  // Idempotent reset: clear existing data (child tables first) so the seed
+  // can run on every deploy without unique-constraint collisions.
+  const clearOrder = [
+    'webhookDelivery', 'webhook', 'aPIKey', 'couponProduct', 'coupon',
+    'review', 'affiliateEarning', 'affiliate', 'subscription', 'download',
+    'transaction', 'productFile', 'product', 'store', 'payout',
+    'auditLog', 'idempotencyKey', 'merchant',
+  ];
+  for (const model of clearOrder) {
+    try {
+      if (prisma[model] && typeof prisma[model].deleteMany === 'function') {
+        await prisma[model].deleteMany();
+      }
+    } catch (e) {
+      console.log(`  (skip clearing ${model}: ${e.message})`);
+    }
+  }
+  console.log('✓ Cleared existing data');
 
   // ============================================================================
   // Create Merchants
@@ -400,7 +422,7 @@ async function main() {
   // Create API Keys for Testing
   // ============================================================================
 
-  await prisma.apiKey.create({
+  await prisma.aPIKey.create({
     data: {
       merchantId: merchant1.id,
       publicKey: 'pk_live_alice_test_key_123456',
@@ -409,7 +431,7 @@ async function main() {
     },
   });
 
-  await prisma.apiKey.create({
+  await prisma.aPIKey.create({
     data: {
       merchantId: merchant2.id,
       publicKey: 'pk_live_bob_test_key_789012',

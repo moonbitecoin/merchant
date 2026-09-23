@@ -97,7 +97,7 @@ export async function verifyApiKey(
   const cleanToken = token.startsWith('Bearer ') ? token.slice(7) : token;
 
   try {
-    const apiKey = await prisma.apiKey.findUnique({
+    const apiKey = await prisma.aPIKey.findUnique({
       where: { publicKey: cleanToken.split('_')[0] }, // pk_xyz format
       select: {
         secretKeyHash: true,
